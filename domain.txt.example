@@ -1,0 +1,10 @@
+########    DOMAIN LIST
+
+# Lines who starts this # are ignored
+
+
+<domain>                     : <alwaysdata site name>
+example.com                  : default
+
+sub.example.com              : extern  # domain with 'extern' site name will not be check by alwaysdata checker
+
