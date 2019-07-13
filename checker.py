@@ -8,3 +8,6 @@ class DomainChecker:
 
     def check(self):
         pass
+
+    def update(self):
+        pass

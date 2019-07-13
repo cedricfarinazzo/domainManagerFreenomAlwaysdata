@@ -17,10 +17,16 @@ def main():
     domains = load_domains_from_file(filename_domain)
     print("domains list: %d domains" % (len(domains)))
 
+    to_do = {}
     print("\n\n     DNS CHECK  \n\n")
-    freen = freenom.DomainCheckerFreenomDNS(domains)
-    freen.check()
-    to_do = {**freen.to_do}
+    freendns = freenom.DomainCheckerFreenomDNS(domains)
+    freendns.check()
+    to_do = {**to_do, **freendns.to_do}
+
+    print("\n\n     FREENOM API CHECK  \n\n")
+    freenapi = freenom.DomainCheckerFreenomAPI(domains)
+    freenapi.check(FREENOM_EMAIL, FREENOM_PASSWORD)
+    to_do = {**to_do, **freenapi.to_do}
 
     print("\n\n    ALWAYSDATA CHECK \n\n")
     alwaysd = alwaysdata.DomainCheckerAlwaysdata(domains, to_do)
@@ -32,7 +38,7 @@ def main():
     for key, l in to_do.items():
         print("  * " + key)
         for e in l:
-            print("- " + e.name + " | " + e.sitehost)
+            print("- ", e)
             actionrequired = True
         print()
 
@@ -41,7 +47,13 @@ def main():
         while confirm not in 'ynYN':
             confirm = input("confirm [y/n]: ")
         if confirm == 'y' or confirm == 'Y':
+            print()
+            freendns.update()
+            print()
+            freenapi.update()
+            print()
             alwaysd.update()
+            print()
         else:
             print("abort")
 
