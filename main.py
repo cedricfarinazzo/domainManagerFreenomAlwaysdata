@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf8 -*-
 
-from conf import ALWAYSDATA_API_KEY, ALWAYSDATA_ACCOUNT, filename_domain
+from conf import ALWAYSDATA_API_KEY, ALWAYSDATA_ACCOUNT, \
+        FREENOM_EMAIL, FREENOM_PASSWORD, filename_domain
 from tools import alwaysdata_init_auth, alwaysdata_clean_auth, \
         load_domains_from_file
 
@@ -16,7 +17,7 @@ def main():
     domains = load_domains_from_file(filename_domain)
     print("domains list: %d domains" % (len(domains)))
 
-    print("\n\n     HTTP CHECK  \n\n")
+    print("\n\n     DNS CHECK  \n\n")
     freen = freenom.DomainCheckerFreenomDNS(domains)
     freen.check()
     to_do = {**freen.to_do}

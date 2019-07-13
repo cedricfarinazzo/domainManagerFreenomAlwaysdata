@@ -27,7 +27,7 @@ Then it will check your alwaysdata configuration and it will propose you to do a
 
 #### How to add a freenom domain to alwaysdata ?
 
-First go the the freenom dns management page of your domain and then go on Management Tools > Nameservers and set as following:
+First go the the freenom dns management page of your domain and then go on Management Tools > Nameservers, select 'Add custom nameservers' and set as following:
 - Nameserver 1: dns1.alwaysdata.com
 - Nameserver 2: dns2.alwaysdata.com
 With this configuration, alwaysdata can manage your dns and you can do everything (domains, subdomains, email address, ...)
