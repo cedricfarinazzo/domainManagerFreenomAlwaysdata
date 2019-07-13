@@ -1,5 +1,5 @@
-from alwaysdata_api import *
-from tools import *
+from alwaysdata_api import Domain, Site, Subdomain, SSLCertificate
+from tools import isSubdomain
 import checker
 
 
@@ -16,7 +16,6 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
         self.alsubdomains = Subdomain.list()
         self.alsite = Site.list()
         self.alsslcert = SSLCertificate.list()
-
 
     def check(self):
         domains_add = []
@@ -54,7 +53,7 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                         break
             if not found_site:
                 site_add_dom.append(d)
-            
+
             ssl = None
             for assl in self.alsslcert:
                 if d.name == assl.name:
@@ -75,30 +74,32 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
 
         try:
             self.to_do["domains_add"] = self.to_do["domains_add"] + domains_add
-        except:
+        except Exception:
             self.to_do["domains_add"] = domains_add
         try:
-            self.to_do["subdomains_add"] = self.to_do["subdomains_add"] + subdomains_add
-        except:
+            self.to_do["subdomains_add"] = self.to_do["subdomains_add"] \
+                    + subdomains_add
+        except Exception:
             self.to_do["subdomains_add"] = subdomains_add
         try:
-            self.to_do["site_add_dom"] = self.to_do["site_add_dom"] + site_add_dom
-        except:
+            self.to_do["site_add_dom"] = self.to_do["site_add_dom"] \
+                    + site_add_dom
+        except Exception:
             self.to_do["site_add_dom"] = site_add_dom
         try:
             self.to_do["sslcert_add"] = self.to_do["sslcert_add"] + sslcert_add
-        except:
+        except Exception:
             self.to_do["sslcert_add"] = sslcert_add
         try:
-            self.to_do["sslcert_assign"] = self.to_do["sslcert_assign"] + sslcert_assign
-        except:
+            self.to_do["sslcert_assign"] = self.to_do["sslcert_assign"] \
+                    + sslcert_assign
+        except Exception:
             self.to_do["sslcert_assign"] = sslcert_assign
         try:
-            self.to_do["sslcert_update"] = self.to_do["sslcert_update"] + sslcert_update
-        except:
+            self.to_do["sslcert_update"] = self.to_do["sslcert_update"] \
+                    + sslcert_update
+        except Exception:
             self.to_do["sslcert_update"] = sslcert_update
-
-
 
     def update(self):
         if self.to_do == []:
@@ -108,8 +109,9 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
             try:
                 d.post()
                 print("Domain %s added to alwaysdatVya" % (domain.name))
-            except:
-                print("Failed to add %s domain to alwaysdatVya" % (domain.name))
+            except Exception:
+                print("Failed to add %s domain "
+                      "to alwaysdatVya" % (domain.name))
 
         for domain in self.to_do["subdomains_add"]:
             if domain.sitehost == 'extern':
@@ -125,15 +127,18 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
             if domain.name + '/' in site.addresses:
                 continue
             if site is None:
-                print("Cannot find site %s to add domain %s" %(domain.sitehost, domain.name))
+                print("Cannot find site "
+                      "%s to add domain %s" % (domain.sitehost, domain.name))
                 continue
             site.addresses.append(domain.name + '/')
             try:
                 site.patch()
-                print("SubDomain %s added to %s site" % (domain.name, domain.sitehost))
-            except:
-                print("Failed to add %s SubDomain to %s site" % (domain.name, domain.sitehost))
-        
+                print("SubDomain %s added "
+                      "to %s site" % (domain.name, domain.sitehost))
+            except Exception:
+                print("Failed to add %s SubDomain "
+                      "to %s site" % (domain.name, domain.sitehost))
+
         for domain in self.to_do["site_add_dom"]:
             if domain.sitehost == 'extern':
                 continue
@@ -146,16 +151,19 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                     site = e
                     break
             if site is None:
-                print("Cannot find site %s to add domain %s" %(domain.sitehost, domain.name))
+                print("Cannot find site %s to add "
+                      "domain %s" % (domain.sitehost, domain.name))
                 continue
             if domain.name + '/' in site.addresses:
                 continue
             site.addresses.append(domain.name + '/')
             try:
                 site.patch()
-                print("Domain %s added to %s site" % (domain.name, domain.sitehost))
-            except:
-                print("Failed to add %s Domain to %s site" % (domain.name, domain.sitehost))
+                print("Domain %s added to "
+                      "%s site" % (domain.name, domain.sitehost))
+            except Exception:
+                print("Failed to add %s Domain to "
+                      "%s site" % (domain.name, domain.sitehost))
 
         for domain in self.to_do["sslcert_add"]:
             ssl = SSLCertificate(name=domain.name)
@@ -163,10 +171,12 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                 ssl.post()
                 print("SslCertificate created for %s" % (domain.name))
 
-            except:
-                print("Failed to create SslCertificate for %s. Try later. Maybe your certificate is being created." % (domain.name))
+            except Exception:
+                print("Failed to create SslCertificate for %s."
+                      " Try later. Maybe your certificate is "
+                      "being created." % (domain.name))
             self.to_do["sslcert_assign"].append(domain)
-        
+
         for domain in self.to_do["sslcert_assign"]:
             ssl = None
             for assl in self.alsslcert:
@@ -179,20 +189,23 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                     alsubdom = e
                     break
             if ssl is None or alsubdom is None:
-                print("Cannot found sslcertificate or domain: %s" % (domain.name))
+                print("Cannot found sslcertificate "
+                      "or domain: %s" % (domain.name))
                 continue
             alsubdom.ssl_certificate = ssl.id
             try:
                 alsubdom.patch()
-                print("Assign certificate to %s domain" % (domain.name))
-            except:
-                print("Failed to assign certificate to %s domain" % (domain.name))
-        
+                print("Assign certificate to "
+                      "%s domain" % (domain.name))
+            except Exception:
+                print("Failed to assign certificate to "
+                      "%s domain" % (domain.name))
+
         for e in self.alsite:
             try:
                 e.restart()
                 print("Restart " + e.name)
-            except:
+            except Exception:
                 print("Failed to restart " + e.name)
 
     def __remove_domain_site(self, domain, site):
@@ -200,6 +213,6 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
         try:
             site.patch()
             print("Domain %s removed from %s site" % (domain.name, site.name))
-        except:
-            print("Failed to remove %s Domain from %s site" % (domain.name, domain.sitehost))
-
+        except Exception:
+            print("Failed to remove %s "
+                  "Domain from %s site" % (domain.name, domain.sitehost))

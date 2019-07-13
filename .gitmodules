@@ -1,0 +1,3 @@
+[submodule "Freenom-dns-updater"]
+	path = Freenom-dns-updater
+	url = git@github.com:cedricfarinazzo/Freenom-dns-updater.git

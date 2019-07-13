@@ -1,11 +1,13 @@
 #!/usr/bin/python
 # -*- coding: utf8 -*-
 
-from conf import *
-from tools import *
+from conf import ALWAYSDATA_API_KEY, ALWAYSDATA_ACCOUNT, filename_domain
+from tools import alwaysdata_init_auth, alwaysdata_clean_auth, \
+        load_domains_from_file
+
 
 def main():
-    init_auth(ALWAYSDATA_API_KEY, ALWAYSDATA_ACCOUNT)
+    alwaysdata_init_auth(ALWAYSDATA_API_KEY, ALWAYSDATA_ACCOUNT)
 
     import freenom
     import alwaysdata
@@ -17,13 +19,13 @@ def main():
     print("\n\n     HTTP CHECK  \n\n")
     freen = freenom.DomainCheckerFreenomDNS(domains)
     freen.check()
-    to_do = freen.to_do
+    to_do = {**freen.to_do}
 
     print("\n\n    ALWAYSDATA CHECK \n\n")
     alwaysd = alwaysdata.DomainCheckerAlwaysdata(domains, to_do)
     alwaysd.check()
-    to_do = alwaysd.to_do
-    
+    to_do = {**to_do, **alwaysd.to_do}
+
     print("\n\n    TO DO  \n\n")
     actionrequired = False
     for key, l in to_do.items():
@@ -42,7 +44,11 @@ def main():
         else:
             print("abort")
 
-    clean_auth()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        raise
+    finally:
+        alwaysdata_clean_auth()
