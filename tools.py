@@ -1,16 +1,17 @@
-import os
-
-
 class PersonnalDomain:
     name = ""
+    account = None
     sitehost = ""
 
-    def __init__(self, name, sitehost):
+    def __init__(self, name, sitehost, account=None):
         self.name = name
         self.sitehost = sitehost
+        self.account = account
 
     def __str__(self):
-        return "%s  |   %s" % (self.name, self.sitehost)
+        if self.account is None:
+            return "%s  |   %s" % (self.name, self.sitehost)
+        return "%s  |   %s|%s" % (self.name, self.account, self.sitehost)
 
     def __repr__(self):
         return self.__str__()
@@ -32,7 +33,11 @@ def load_domains_from_file(filename):
             continue
         j = i.strip().split(':')
         dom, host = removeSpace(j[0]), removeSpace(j[1])
-        domains.append(PersonnalDomain(dom, host))
+        host_conf = host.split('|')
+        if len(host_conf) < 2:
+            domains.append(PersonnalDomain(dom, host))
+        else:
+            domains.append(PersonnalDomain(dom, host_conf[1], host_conf[0]))
     domains.sort()
     return domains
 
@@ -45,13 +50,3 @@ def getDomainFromSubdomain(url):
     if not isSubdomain(url):
         return url
     return url.split('.')[1:]
-
-
-def alwaysdata_init_auth(api_key, account):
-    os.environ['ALWAYSDATA_API_KEY'] = api_key
-    os.environ['ALWAYSDATA_ACCOUNT'] = account
-
-
-def alwaysdata_clean_auth():
-    os.environ['ALWAYSDATA_API_KEY'] = ''
-    os.environ['ALWAYSDATA_ACCOUNT'] = ''

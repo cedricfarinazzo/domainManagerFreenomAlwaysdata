@@ -13,6 +13,9 @@ class DomainCheckerFreenomDNS(checker.DomainChecker):
         dns_update = []
         for domain in self.domains:
             print('Domain %s : ' % (domain.name), end='  ')
+            if domain.sitehost == 'extern':
+                print(" SKIP")
+                continue
             try:
                 anwser_dns = dns.resolver.query(domain.name, 'NS')
                 ns = []

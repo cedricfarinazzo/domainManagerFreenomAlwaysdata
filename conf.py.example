@@ -1,7 +1,7 @@
 filename_domain = "domain.txt"
 
 ALWAYSDATA_API_KEY = ''
-ALWAYSDATA_ACCOUNT = ''
+ALWAYSDATA_ACCOUNT_LIST = []
 
 FREENOM_EMAIL = ''
 FREENOM_PASSWORD = ''
