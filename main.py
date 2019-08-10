@@ -49,7 +49,7 @@ def main():
             print()
             freendns.update()
             print()
-            freenapi.update()
+            freenapi.update(to_do=to_do)
             print()
             alwaysd.update()
             print()

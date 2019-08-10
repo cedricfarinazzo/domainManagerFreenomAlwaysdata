@@ -5,7 +5,7 @@ import dns.resolver
 sys.path.insert(0, str(Path(__file__).parent.joinpath("Freenom-dns-updater").resolve()))
 import freenom_dns_updater
 from datetime import date
-
+from tools import isSubdomain
 
 class DomainCheckerFreenomDNS(checker.DomainChecker):
 
@@ -13,7 +13,7 @@ class DomainCheckerFreenomDNS(checker.DomainChecker):
         dns_update = []
         for domain in self.domains:
             print('Domain %s : ' % (domain.name), end='  ')
-            if domain.sitehost == 'extern':
+            if domain.sitehost == 'extern' or isSubdomain(domain.name):
                 print(" SKIP")
                 continue
             try:
@@ -86,7 +86,8 @@ class DomainCheckerFreenomAPI(checker.DomainChecker):
         except Exception:
             self.to_do["need_renew"] = need_renew
 
-    def update(self):
+    def update(self, to_do={}):
+        self.to_do = to_do
         try:
             domains_list = self.freenom.list_domains()
         except Exception:
@@ -100,3 +101,14 @@ class DomainCheckerFreenomAPI(checker.DomainChecker):
                     print("Renew ", d.name)
                 except Exception:
                     print("Failed to renew ", d.name)
+            if 'dns_update' in self.to_do:
+                found = False
+                for dto_do in self.to_do['dns_update']:
+                    if dto_do.name in d.name:
+                        found = True
+                        break
+                if found:
+                    if self.freenom.set_nameserver(d, ['dns1.alwaysdata.com', 'dns2.alwaysdata.com']):
+                        print("Set alwaysdata nameservers to " + str(d.name))
+                    else:
+                        print("failed to et alwaysdata nameservers to " + str(d.name))
