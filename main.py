@@ -35,11 +35,12 @@ def main():
     print("\n\n    TO DO  \n\n")
     actionrequired = False
     for key, l in to_do.items():
-        print("  * " + key)
+        out_data = ""
         for e in l:
-            print("- ", e)
+            out_data += "-  " + str(e) + "\n"
             actionrequired = True
-        print()
+        if actionrequired:
+            print("  * " + key + "\n" + out_data + "\n")
 
     if actionrequired:
         confirm = ' '
@@ -55,6 +56,8 @@ def main():
             print()
         else:
             print("abort")
+    else:
+        print("Nothing...")
 
 
 if __name__ == "__main__":
