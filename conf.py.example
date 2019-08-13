@@ -2,6 +2,7 @@ filename_domain = "domain.txt"
 
 ALWAYSDATA_API_KEY = ''
 ALWAYSDATA_ACCOUNT_LIST = []
+ALWAYSDATA_ACCOUNT_DOMAIN = '' # alwaysdata account where your domains will be added
 
 FREENOM_EMAIL = ''
 FREENOM_PASSWORD = ''

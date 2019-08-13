@@ -7,14 +7,20 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
 
     ALWAYSDATA_API_KEY = ""
     ALWAYSDATA_ACCOUNT_LIST = []
+    ALWAYSDATA_ACCOUNT_DOMAIN = ""
     account_data = {}
 
     def __init__(self, domains, to_do, ALWAYSDATA_API_KEY,
-                 ALWAYSDATA_ACCOUNT_LIST):
+                 ALWAYSDATA_ACCOUNT_LIST, ALWAYSDATA_ACCOUNT_DOMAIN):
         super().__init__(domains, to_do)
         self.ALWAYSDATA_API_KEY = ALWAYSDATA_API_KEY
         self.ALWAYSDATA_ACCOUNT_LIST = ALWAYSDATA_ACCOUNT_LIST
+        self.ALWAYSDATA_ACCOUNT_DOMAIN = ALWAYSDATA_ACCOUNT_DOMAIN
         self.account_data = {}
+
+        if self.ALWAYSDATA_ACCOUNT_DOMAIN not in self.ALWAYSDATA_ACCOUNT_LIST:
+            raise Exception("ALWAYSDATA_ACCOUNT_DOMAIN must \
+                    be in ALWAYSDATA_ACCOUNT_LIST")
         for account in self.ALWAYSDATA_ACCOUNT_LIST:
             data = {"auth": Auth(account, self.ALWAYSDATA_API_KEY)}
             data["aldomains"] = Domain.list(auth=data["auth"])
@@ -24,12 +30,12 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
             self.account_data[account] = data
 
     def check(self):
+        account_domain = self.account_data[self.ALWAYSDATA_ACCOUNT_DOMAIN]
         domains_add = []
         subdomains_add = []
         site_add_dom = []
         sslcert_add = []
         sslcert_assign = []
-        sslcert_update = []
 
         for d in self.domains:
             if d.sitehost == 'extern':
@@ -39,7 +45,7 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                 print(" ERROR account not specified")
                 continue
             domain_account = self.account_data[d.account]
-            aldomains = domain_account["aldomains"]
+            aldomains = account_domain["aldomains"]
             alsubdomains = domain_account["alsubdomains"]
             alsite = domain_account["alsite"]
             alsslcert = domain_account["alsslcert"]
@@ -76,16 +82,16 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                     break
             if ssl is None:
                 sslcert_add.append(d)
-            else:
-                alsubdom = None
-                for e in alsubdomains:
-                    if e.hostname == d.name:
-                        alsubdom = e
-                        break
-                if alsubdom is None or alsubdom.ssl_certificate is None:
-                    sslcert_add.append(d)
-                elif alsubdom.ssl_certificate['href'] != ssl.href:
-                    sslcert_assign.append(d)
+
+            alsubdom = None
+            for e in alsubdomains:
+                if e.hostname == d.name:
+                    alsubdom = e
+                    break
+            if alsubdom is not None and \
+                    (alsubdom.ssl_certificate is None or
+                     alsubdom.ssl_certificate['href'] != ssl.href):
+                sslcert_assign.append(d)
 
         try:
             self.to_do["domains_add"] = self.to_do["domains_add"] + domains_add
@@ -110,21 +116,21 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                     + sslcert_assign
         except Exception:
             self.to_do["sslcert_assign"] = sslcert_assign
-        try:
-            self.to_do["sslcert_update"] = self.to_do["sslcert_update"] \
-                    + sslcert_update
-        except Exception:
-            self.to_do["sslcert_update"] = sslcert_update
 
     def update(self):
         if self.to_do == []:
             self.check()
+
+        account_domain = self.account_data[self.ALWAYSDATA_ACCOUNT_DOMAIN]
         for domain in self.to_do["domains_add"]:
-            domain_account = self.account_data[domain.account]
-            d = Domain(name=domain.name, auth=domain_account["auth"])
+            for ac, ac_data in self.account_data.items():
+                for d in ac_data["aldomains"]:
+                    if d.name == domain.name:
+                        self.__remove_domain(d, ac)
+            d = Domain(name=domain.name)
             try:
-                d.post()
-                print("Domain %s added to alwaysdatVya" % (domain.name))
+                d.post(auth=account_domain["auth"])
+                print("Domain %s added to alwaysdata" % (domain.name))
             except Exception:
                 print("Failed to add %s domain "
                       "to alwaysdata" % (domain.name))
@@ -134,10 +140,13 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                 continue
             domain_account = self.account_data[domain.account]
             site = None
-            for e in self.alsite:
-                if domain.name + '/' in e.addresses:
-                    self.__remove_domain_site(domain, e)
-            for e in self.alsite:
+            for ac, ac_data in self.account_data.items():
+                alsite = ac_data["alsite"]
+                for e in alsite:
+                    if domain.name + '/' in e.addresses:
+                        self.__remove_domain_site(domain, e, ac)
+            alsite = domain_account["alsite"]
+            for e in alsite:
                 if e.name == domain.sitehost:
                     site = e
                     break
@@ -149,7 +158,7 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                 continue
             site.addresses.append(domain.name + '/')
             try:
-                site.patch()
+                site.patch(auth=domain_account["auth"])
                 print("SubDomain %s added "
                       "to %s site" % (domain.name, domain.sitehost))
             except Exception:
@@ -159,11 +168,15 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
         for domain in self.to_do["site_add_dom"]:
             if domain.sitehost == 'extern':
                 continue
+            domain_account = self.account_data[domain.account]
             site = None
-            for e in self.alsite:
-                if domain.name + '/' in e.addresses:
-                    self.__remove_domain_site(domain, e)
-            for e in self.alsite:
+            for ac, ac_data in self.account_data.items():
+                alsite = ac_data["alsite"]
+                for e in alsite:
+                    if domain.name + '/' in e.addresses:
+                        self.__remove_domain_site(domain, e, ac)
+            alsite = domain_account["alsite"]
+            for e in alsite:
                 if e.name == domain.sitehost:
                     site = e
                     break
@@ -175,7 +188,7 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                 continue
             site.addresses.append(domain.name + '/')
             try:
-                site.patch()
+                site.patch(auth=domain_account["auth"])
                 print("Domain %s added to "
                       "%s site" % (domain.name, domain.sitehost))
             except Exception:
@@ -183,17 +196,29 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                       "%s site" % (domain.name, domain.sitehost))
 
         for domain in self.to_do["sslcert_add"]:
+            skip = False
+            for ac, ac_data in self.account_data.items():
+                for ssl in ac_data["alsslcert"]:
+                    if ssl.name == domain.name:
+                        print(ac)
+                        if domain.account == ac:
+                            skip = True
+                            break
+                        self.__remove_sslcert(ssl, ac)
+                if skip:
+                    break
+            if skip:
+                continue
             domain_account = self.account_data[domain.account]
-            ssl = SSLCertificate(name=domain.name, auth=domain_account["auth"])
+            ssl = SSLCertificate(name=domain.name)
             try:
-                ssl.post()
+                ssl.post(auth=ac_data["auth"])
+                self.to_do["sslcert_assign"].append(domain)
                 print("SslCertificate created for %s" % (domain.name))
-
             except Exception:
                 print("Failed to create SslCertificate for %s."
                       " Try later. Maybe your certificate is "
                       "being created." % (domain.name))
-            self.to_do["sslcert_assign"].append(domain)
 
         for domain in self.to_do["sslcert_assign"]:
             domain_account = self.account_data[domain.account]
@@ -215,7 +240,7 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
                 continue
             alsubdom.ssl_certificate = ssl.id
             try:
-                alsubdom.patch()
+                alsubdom.patch(auth=domain_account["auth"])
                 print("Assign certificate to "
                       "%s domain" % (domain.name))
             except Exception:
@@ -226,16 +251,32 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
             alsite = account_data["alsite"]
             for e in alsite:
                 try:
-                    e.restart()
-                    print("Restart " + e.name)
+                    e.restart(auth=account_data['auth'])
+                    print("Restart " + account_name + ":" + e.name)
                 except Exception:
                     print("Failed to restart " + e.name)
 
-    def __remove_domain_site(self, domain, site):
+    def __remove_domain_site(self, domain, site, account):
         site.addresses.remove(domain.name + '/')
         try:
-            site.patch()
+            site.patch(auth=self.account_data[account]['auth'])
             print("Domain %s removed from %s site" % (domain.name, site.name))
         except Exception:
             print("Failed to remove %s "
                   "Domain from %s site" % (domain.name, domain.sitehost))
+
+    def __remove_domain(self, domain, account):
+        try:
+            domain.delete(auth=self.account_data[account]['auth'])
+            print("Domain %s removed" % (domain.name))
+        except Exception:
+            print("Failed to remove %s "
+                  "Domain" % (domain.name))
+
+    def __remove_sslcert(self, sslcert, account):
+        try:
+            sslcert.delete(auth=self.account_data[account]['auth'])
+            print("SSL Certificate %s removed" % (sslcert.name))
+        except Exception:
+            print("Failed to remove %s "
+                  "SSL Certificate" % (sslcert.name))
