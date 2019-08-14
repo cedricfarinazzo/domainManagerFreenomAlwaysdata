@@ -200,7 +200,6 @@ class DomainCheckerAlwaysdata(checker.DomainChecker):
             for ac, ac_data in self.account_data.items():
                 for ssl in ac_data["alsslcert"]:
                     if ssl.name == domain.name:
-                        print(ac)
                         if domain.account == ac:
                             skip = True
                             break
